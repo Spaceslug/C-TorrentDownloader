@@ -3,12 +3,13 @@
 
 #include "stdafx.h"
 #include "boost/thread.hpp"
-#include "MagnetLinkParser.h"
+#include "MagnetLinkParser.h" 
 using asio::ip::tcp;
 using asio::ip::udp;
 
 std::string globalPeerIdStart = "-AS0100-";
 std::string peerId = globalPeerIdStart + "somerandomdu";
+std:srand
 
 int main(int argc, char* argv[])
 {
