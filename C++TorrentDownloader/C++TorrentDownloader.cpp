@@ -4,15 +4,29 @@
 #include "stdafx.h"
 #include "boost/thread.hpp"
 #include "MagnetLinkParser.h" 
+#include <cstdlib>
+#include <cstring>
 using asio::ip::tcp;
 using asio::ip::udp;
 
 std::string globalPeerIdStart = "-AS0100-";
-std::string peerId = globalPeerIdStart + "somerandomdu";
-std:srand
+char peerId[20] = { '-','A','S','0','1','0','0','-'};
+std::string peerIdUrlEncoded;
+
 
 int main(int argc, char* argv[])
 {
+	//Set opp peer id
+	std::srand(std::time(0));
+	for (int i = 8; i < 20; i += 4) {
+		int x = std::rand();
+		peerId[i] = (char)x;
+		peerId[i + 1] = (char)(x >> 4);
+		peerId[i + 2] = (char)(x >> 8);
+		peerId[i + 3] = (char)(x >> 12);
+	}
+	peerIdUrlEncoded = ss::UrlEncode(std::string(peerId));
+		
 	try
 	{
 		if (argc != 2)
@@ -62,8 +76,10 @@ int main(int argc, char* argv[])
 						boost::asio::connect(socket, endpoint_iterator);
 						//send GET to tracker
 						std::string getString = "GET " + *tracker + "?info_hash=" + ss::UrlEncode(mlStructure.infoHash)
-							+ "&peer_id"
+							+ "&peer_id=" + peerId
 							+ " HTTP/1.1\r\n";
+							std::string globalPeerIdStart = "-AS0100-";
+
 						socket.async_send(boost::asio::buffer(getString), [](const boost::system::error_code& err, std::size_t bytes_transferred) {
 							if (!err) {
 							

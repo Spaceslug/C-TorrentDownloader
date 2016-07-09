@@ -62,7 +62,7 @@ public:
 		return escaped.str();
 	}
 
-	static std::string ToLower(std::string &s) {
+	static std::string ToLower( std::string &s) {
 		std::transform(s.begin(), s.end(), s.begin(), ::tolower);
 		return s;
 	}
