@@ -12,7 +12,11 @@ using asio::ip::udp;
 std::string globalPeerIdStart = "-AS0100-";
 char peerId[20] = { '-','A','S','0','1','0','0','-'};
 std::string peerIdUrlEncoded;
+std::string portClientTracker("6886");
 
+asio::streambuf trackerResiver;
+
+char udpPackage[65535];
 
 int main(int argc, char* argv[])
 {
@@ -25,6 +29,13 @@ int main(int argc, char* argv[])
 		peerId[i + 2] = (char)(x >> 8);
 		peerId[i + 3] = (char)(x >> 12);
 	}
+	/*for (int i = 8; i < 20; i += 4) {
+		int x = std::rand();
+		globalPeerIdStart.push_back(((char)x ^ 0x80));
+		globalPeerIdStart.push_back((char)((x >> 4) ^ 0x80));
+		globalPeerIdStart.push_back((char)((x >> 8) ^ 0x80));
+		globalPeerIdStart.push_back((char)((x >> 12) ^ 0x80));
+	}*/
 	peerIdUrlEncoded = ss::UrlEncode(std::string(peerId));
 		
 	try
@@ -68,21 +79,36 @@ int main(int argc, char* argv[])
 				}
 				std::string* tracker = &mlStructure.trackers[i];
 				//Time to send tracker GET
-				udp::resolver::query query(mlStructure.trackers[i].substr(6, mlStructure.trackers[i].size() - 6));
+				udp::resolver::query query(mlStructure.trackers[i].substr(6, mlStructure.trackers[i].size() - 6), std::to_string(port));
 				udpResolver.async_resolve(query, [&io_service, tracker, mlStructure](const boost::system::error_code& err, udp::resolver::iterator endpoint_iterator) {
 					if (!err) {
 						// Try each endpoint until we successfully establish a connection.
 						udp::socket socket(io_service);
 						boost::asio::connect(socket, endpoint_iterator);
 						//send GET to tracker
-						std::string getString = "GET " + *tracker + "?info_hash=" + ss::UrlEncode(mlStructure.infoHash)
-							+ "&peer_id=" + peerId
+						std::string getString = "GET " + *tracker
+							+ "?info_hash=" + ss::UrlEncode(mlStructure.infoHash)
+							+ "&peer_id=" + peerIdUrlEncoded
+							+ "&port=" + std::to_string(socket.local_endpoint().port())
+							+ "&uploaded=0"
+							+ "&downloaded=0"
+							+ "&event=started"
+							+ "&numwant=50"
 							+ " HTTP/1.1\r\n";
-							std::string globalPeerIdStart = "-AS0100-";
 
-						socket.async_send(boost::asio::buffer(getString), [](const boost::system::error_code& err, std::size_t bytes_transferred) {
+						socket.async_send(boost::asio::buffer(getString), [&socket](const boost::system::error_code& err, std::size_t bytes_transferred) {
 							if (!err) {
-							
+								printf("tracker request sent. bytes " + bytes_transferred);
+								socket.async_receive_from(boost::asio::buffer(udpPackage, 65535), socket.remote_endpoint(), [](const boost::system::error_code& err, std::size_t bytes_transferred) {
+									if (!err) {
+										std::string s(udpPackage, bytes_transferred);
+										std::cout << s << std::endl;
+									}
+									else {
+										printf(err.message().c_str());
+										int a; std::cin >> a; return 1;
+									}
+								});
 							}
 							else {
 								printf(err.message().c_str());
@@ -116,6 +142,8 @@ int main(int argc, char* argv[])
 				quit = true;
 			}
 		}
+		int i;
+		std::cin >> i;
 
 		io_service.stop();
 
