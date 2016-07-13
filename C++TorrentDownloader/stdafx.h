@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>
+#include <string>
 #include "boost/asio.hpp"
 #include "ss.h"
 namespace asio = boost::asio;

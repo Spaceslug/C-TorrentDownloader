@@ -36,6 +36,9 @@
     <ClInclude Include="Tracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Torrent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -48,6 +51,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Tracker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Torrent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

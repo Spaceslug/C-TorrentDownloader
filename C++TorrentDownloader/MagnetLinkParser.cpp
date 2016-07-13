@@ -1,16 +1,9 @@
 #include "stdafx.h"
 #include "MagnetLinkParser.h"
 #include "boost/algorithm/string.hpp"
+#include "Torrent.h"
 
 typedef std::size_t int_t;
-
-MLStructure::MLStructure() {
-
-}
-
-MLStructure::~MLStructure() {
-
-}
 
 MagnetLinkParser::MagnetLinkParser()
 {
@@ -22,13 +15,14 @@ MagnetLinkParser::~MagnetLinkParser()
 
 }
 
-MLStructure* MagnetLinkParser::parse(std::string magnetLink, MLStructure *mlStructure = new MLStructure()) {
+std::shared_ptr<Torrent> MagnetLinkParser::parse(std::string magnetLink, std::shared_ptr<Torrent> torrent) {
 	int_t result; 
 	result = magnetLink.find(std::string("magnet:?"));
 	if (result == std::string::npos || result != 0) {
-		mlStructure->items["error"] = "The magnet link is invalid";
-		return mlStructure;
+		torrent->SetError("The magnet link is invalid");
+		return torrent;
 	}
+	//Removes the unimportaint part
 	magnetLink.erase(0, 8);
 	std::vector<std::string> parameters;
 	ss::Split(magnetLink, '&', parameters);
@@ -41,31 +35,28 @@ MLStructure* MagnetLinkParser::parse(std::string magnetLink, MLStructure *mlStru
 		key = parameter.substr(0, result);
 		value = parameter.substr(result + 1, parameter.size() - result - 1);
 		if (key == "tr") {
-			mlStructure->trackers.push_back(value);
+			torrent->AddTracker(std::make_shared<Tracker>(value, torrent->shared_from_this()));
 			//return mlStructure;
 		}
 		else if (key == "xt") {
-			mlStructure->exactTopic = value;
 			std::vector<std::string> tokens;
 			ss::Split(value, ':', tokens);
 			if (tokens.size() > 2 && tokens[0] == "urn" && tokens[1] == "btih") 
 			{
-				ss::HexToBytes(tokens[2], mlStructure->infoHash, 20);
+				char infoHash[20];
+				ss::HexToBytes(tokens[2], infoHash, 20);
+				torrent->SetInfoHash(std::string(infoHash));
 			}
 			else 
 			{
-				mlStructure->items["error"] = "The magnet link is invalid";
-				return mlStructure;
+				torrent->SetError("The magnet link is invalid");
+				return torrent;
 			}
 		}
 		else if (key == "dn") {
-			mlStructure->displayName = value;
+			torrent->SetDisplayName(value);
 		}
-		mlStructure->items[key] = value;
 	}
 
-	//As debug help
-	mlStructure->items["debug"].assign(magnetLink);
-
-	return mlStructure;
+	return torrent;
 }
